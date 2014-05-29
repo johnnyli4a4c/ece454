@@ -4,8 +4,8 @@
 int main()
 {
     int a = -10, b = 20;
-    return_type ans = make_remote_call("exelinux3.uwaterloo.ca",
-	                               5673,
+    return_type ans = make_remote_call("ecelinux2.uwaterloo.ca",
+	                               10000,
 				       "addtwo", 2,
 	                               sizeof(int), (void *)(&a),
 	                               sizeof(int), (void *)(&b));
