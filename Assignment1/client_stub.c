@@ -10,37 +10,6 @@
 
 #define BUFLEN 2048
 
-void serializeList(arg_type *item, char *buffer)
-{
-	int seeker = 0;  /* integer to keep record of the wrinting position in 'buffer' */
-
-	while(item != 0) /* copy contents of the linked list in buffer as long there 
-			      are items in the list. */
-	{
-		memcpy(&buffer[seeker], &item->arg_size, sizeof(item->arg_size));
-		seeker += sizeof(item->arg_size); /* move seeker ahead by 4 bytes */
-
-		/* copy arg_val contents to the buffer */
-		memcpy(&buffer[seeker], item->arg_val, item->arg_size);
-		seeker += item->arg_size; /* ... and move the seeker ahead by the amount of	
-					         characters in the array. */
-
-		item = item->next; /* move on to the next item (or node) in the list */
-	}
-}
-
-int listSize(arg_type *item)
-{
-	int size = 0;
-
-	while (item != 0) {
-		size += item->arg_size;         /* add arrayLen bytes to 'size' */
-		size += sizeof(item->arg_size); /* add 4 bytes to 'size' */
-		item = item->next;              /* ... and to the batmobil! */
-	}
-	return size;
-}
-
 return_type make_remote_call(const char *servernameorip, 
 							const int serverportnumber,
 							const char *procedure_name,
@@ -51,7 +20,9 @@ return_type make_remote_call(const char *servernameorip,
 	char buf[BUFLEN];	/* message buffer */
 	int recvlen;		/* # bytes in acknowledgement message */
 	struct hostent *he;	/* used to get ip from hostname */
-	int listLength;
+	int listLength, seeker;
+	va_list list;
+	char *buffer;
 
 	/* create a socket */
 	if ((fd=socket(AF_INET, SOCK_DGRAM, 0))==-1)
@@ -82,28 +53,33 @@ return_type make_remote_call(const char *servernameorip,
 	remaddr.sin_port = htons(serverportnumber);
 
 	/* now let's send the messages */
-	va_list list;
 	va_start(list, nparams);
-
-	arg_type arg1;
-	arg1.arg_size = va_arg(list, int);
-	arg1.arg_val = va_arg(list, void*);
-	arg_type arg2;
-	arg2.arg_size = va_arg(list, int);
-	arg2.arg_val = va_arg(list, void*);
-	arg2.next = 0;
-	arg1.next = &arg2;
-
+	listLength = 0;	
+	for (i = 0; i < nparams; i++) {
+		int arg_size = va_arg(list, int);
+		listLength += sizeof(arg_size);
+		listLength += arg_size;
+		va_arg(list, void*);
+	}
 	va_end(list);
 
-	listLength = listSize(&arg1);
-
-	char* buffer;
 	/* allocate memory for the list, and let 'buffer' point to it. */
   	buffer = (char *)malloc(listLength);
-  
-  	/* serializing list pointed by *ptr to char pointer named buffer */
-	serializeList(&arg1, buffer);
+
+	va_start(list, nparams);
+	seeker = 0;
+	for (i = 0; i < nparams; i++) {
+		int arg_size = va_arg(list, int);
+		void* arg_val = va_arg(list, void*);
+
+		memcpy(&buffer[seeker], &arg_size, sizeof(arg_size));
+		seeker += sizeof(arg_size); /* move seeker ahead by 4 bytes */
+
+		/* copy arg_val contents to the buffer */
+		memcpy(&buffer[seeker], arg_val, arg_size);
+		seeker += arg_size; /* ... and move the seeker ahead by the size of the argument. */
+	}
+	va_end(list);
 
 	if (sendto(fd, buffer, listLength, 0, (struct sockaddr *)&remaddr, slen)==-1) {
 		perror("sendto");
