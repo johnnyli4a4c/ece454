@@ -83,9 +83,10 @@ void launch_server()
 	char hostname[HOST_NAME_MAX];
 	gethostname(hostname, sizeof(hostname));
 
+	printf("%s %d\n", hostname, ntohs(myaddr.sin_port));
+
 	/* now loop, receiving data and printing what we received */
 	for (;;) {
-		printf("%s %d\n", hostname, ntohs(myaddr.sin_port));
 		recvlen = recvfrom(fd, buf, BUFSIZE, 0, (struct sockaddr *)&remaddr, &addrlen);
 		if (recvlen > 0) {
 			int done = 0;
