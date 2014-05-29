@@ -27,8 +27,8 @@ bool register_procedure(const char *procedure_name, const int nparams, fp_type f
 	func_db_count++;
 }
 
-arg_type *start = 0;
-arg_type *end = 0;
+arg_type *start;
+arg_type *end;
 
 /* function to add 'item' to a linked list */
 void addToList(int arg_size, void **buffer)
@@ -103,6 +103,9 @@ void launch_server()
 			done += procedureNameSize;
 			memcpy(&nparams, &buf[done], sizeof(nparams));
 			done += sizeof(nparams);
+
+			start = 0;
+			end = 0;
 
 			while (done < recvlen) {
 				memcpy(&arg_size, &buf[done], sizeof(arg_size)); 

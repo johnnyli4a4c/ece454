@@ -7,18 +7,18 @@ return_type r;
 return_type add(const int nparams, arg_type* a)
 {
     if(nparams != 2) {
-	/* Error! */
-	r.return_val = NULL;
-	r.return_size = 0;
-	return r;
+    /* Error! */
+    r.return_val = NULL;
+    r.return_size = 0;
+    return r;
     }
 
     if(a->arg_size != sizeof(int) ||
        a->next->arg_size != sizeof(int)) {
-	/* Error! */
-	r.return_val = NULL;
-	r.return_size = 0;
-	return r;
+    /* Error! */
+    r.return_val = NULL;
+    r.return_size = 0;
+    return r;
     }
 
     int i = *(int *)(a->arg_val);
@@ -31,9 +31,36 @@ return_type add(const int nparams, arg_type* a)
     return r;
 }
 
+return_type subtract(const int nparams, arg_type* a)
+{
+    if(nparams != 2) {
+    /* Error! */
+    r.return_val = NULL;
+    r.return_size = 0;
+    return r;
+    }
+
+    if(a->arg_size != sizeof(int) ||
+       a->next->arg_size != sizeof(int)) {
+    /* Error! */
+    r.return_val = NULL;
+    r.return_size = 0;
+    return r;
+    }
+
+    int i = *(int *)(a->arg_val);
+    int j = *(int *)(a->next->arg_val);
+
+    ret_int = i-j;
+    r.return_val = (void *)(&ret_int);
+    r.return_size = sizeof(int);
+
+    return r;
+}
+
 int main() {
     register_procedure("addtwo", 2, add);
-    register_procedure("addagain", 2, add);
+    register_procedure("minustwo", 2, subtract);
 
     launch_server();
 

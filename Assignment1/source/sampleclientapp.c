@@ -15,10 +15,10 @@ int main()
     int c = 4, d = 2;
     return_type ans2 = make_remote_call("ecelinux5.uwaterloo.ca",
 	                               10000,
-				       "addtwo", 2,
+				       "minustwo", 2,
 	                               sizeof(int), (void *)(&c),
 	                               sizeof(int), (void *)(&d));
-    int j = *(int *)(ans.return_val);
+    int j = *(int *)(ans2.return_val);
     printf("client, got result: %d\n", j);
 
     return 0;
