@@ -8,6 +8,7 @@
 #include "mybind.c"
 
 #define BUFSIZE 2048
+#define DBSIZE 50
 
 struct func_type {
     const char		*procedure_name;
@@ -15,7 +16,7 @@ struct func_type {
     fp_type 		fnpointer;
 };
 
-struct func_type func_db[50];
+struct func_type func_db[DBSIZE];
 int func_db_count = 0; 
 
 bool register_procedure(const char *procedure_name, const int nparams, fp_type fnpointer)
@@ -58,6 +59,9 @@ void launch_server()
 	int recvlen;			/* # bytes received */
 	int fd;				/* our socket */
 	char buf[BUFSIZE];	/* receive buffer */
+	fp_type f;
+	int i, sizeOfReturnBuf;
+	char* returnBuf;
 
 	/* create a UDP socket */
 	if ((fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
@@ -86,11 +90,22 @@ void launch_server()
 		if (recvlen > 0) {
 			int done = 0;
 			int arg_size;
+			int procedureNameSize;
+			char* procedure_name;
+			int nparams;
 
 			void** buffer;
 
+			memcpy(&procedureNameSize, &buf[done], sizeof(procedureNameSize));
+			done += sizeof(procedureNameSize);
+			procedure_name = (char *)malloc(procedureNameSize);
+			memcpy(procedure_name, &buf[done], procedureNameSize);
+			done += procedureNameSize;
+			memcpy(&nparams, &buf[done], sizeof(nparams));
+			done += sizeof(nparams);
+
 			while (done < recvlen) {
-				memcpy(&arg_size, buf, sizeof(arg_size)); 
+				memcpy(&arg_size, &buf[done], sizeof(arg_size)); 
 				done += sizeof(arg_size);
 				buffer = (void *)malloc(arg_size); /* allocate space for arg_val */
 				memcpy(buffer, &buf[done], arg_size);  /* read arg_size amount of bytes from buf */
@@ -99,14 +114,23 @@ void launch_server()
 				free(buffer);
 			}
 
-			fp_type f = (fp_type)func_db[0].fnpointer;
+			for (i = 0; i < DBSIZE; i++) {
+				if (strcmp(func_db[i].procedure_name,procedure_name) == 0) {
+					f = (fp_type)func_db[i].fnpointer;
+					break;
+				}
+			}
 			return_type result = f(2, start);
-			printf("%d\n", *(int *)(result.return_val));
+			
+			sizeOfReturnBuf = result.return_size + sizeof(result.return_size);
+			returnBuf = (char *)malloc(sizeOfReturnBuf);
+			memcpy(returnBuf, &result.return_size, sizeof(result.return_size));
+			memcpy(&returnBuf[sizeof(result.return_size)], result.return_val, result.return_size);
 		}
 		else
 			printf("uh oh - something went wrong!\n");
 		// printf("sending response \"%s\"\n", buf);
-		if (sendto(fd, "success!", strlen("success!"), 0, (struct sockaddr *)&remaddr, addrlen) < 0)
+		if (sendto(fd, returnBuf, sizeOfReturnBuf, 0, (struct sockaddr *)&remaddr, addrlen) < 0)
 			perror("sendto");
 	}
 	/* never exits */

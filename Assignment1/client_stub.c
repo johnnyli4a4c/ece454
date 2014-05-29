@@ -20,7 +20,7 @@ return_type make_remote_call(const char *servernameorip,
 	char buf[BUFLEN];	/* message buffer */
 	int recvlen;		/* # bytes in acknowledgement message */
 	struct hostent *he;	/* used to get ip from hostname */
-	int listLength, seeker;
+	int bufferSize, seeker, procedureNameSize;
 	va_list list;
 	char *buffer;
 
@@ -54,20 +54,28 @@ return_type make_remote_call(const char *servernameorip,
 
 	/* now let's send the messages */
 	va_start(list, nparams);
-	listLength = 0;	
+	bufferSize = 0;	
 	for (i = 0; i < nparams; i++) {
 		int arg_size = va_arg(list, int);
-		listLength += sizeof(arg_size);
-		listLength += arg_size;
+		bufferSize += sizeof(arg_size);
+		bufferSize += arg_size;
 		va_arg(list, void*);
 	}
 	va_end(list);
 
+	procedureNameSize = sizeof(procedure_name);
+	bufferSize += sizeof(procedureNameSize) + procedureNameSize + sizeof(nparams);
 	/* allocate memory for the list, and let 'buffer' point to it. */
-  	buffer = (char *)malloc(listLength);
+  	buffer = (char *)malloc(bufferSize);
+  	seeker = 0;
+  	memcpy(&buffer[seeker], &procedureNameSize, sizeof(procedureNameSize));
+  	seeker += sizeof(procedureNameSize);
+  	memcpy(&buffer[seeker], procedure_name, procedureNameSize);
+  	seeker += procedureNameSize;
+  	memcpy(&buffer[seeker], &nparams, sizeof(nparams));
+  	seeker += sizeof(nparams);
 
 	va_start(list, nparams);
-	seeker = 0;
 	for (i = 0; i < nparams; i++) {
 		int arg_size = va_arg(list, int);
 		void* arg_val = va_arg(list, void*);
@@ -81,27 +89,34 @@ return_type make_remote_call(const char *servernameorip,
 	}
 	va_end(list);
 
-	if (sendto(fd, buffer, listLength, 0, (struct sockaddr *)&remaddr, slen)==-1) {
+	if (sendto(fd, buffer, bufferSize, 0, (struct sockaddr *)&remaddr, slen)==-1) {
 		perror("sendto");
 		exit(1);
 	}
 	/* now receive an acknowledgement from the server */
+	return_type returnedVal;
+
 	recvlen = recvfrom(fd, buf, BUFLEN, 0, (struct sockaddr *)&remaddr, &slen);
-            if (recvlen >= 0) {
-                    buf[recvlen] = 0;	/* expect a printable string - terminate it */
-                    printf("received message: \"%s\"\n", buf);
-            }
+    if (recvlen >= 0) {
+    	memcpy(&returnedVal.return_size, buf, sizeof(int));
+    	returnedVal.return_val = (void *)malloc(returnedVal.return_size);
+		memcpy(returnedVal.return_val, &buf[sizeof(int)], returnedVal.return_size);
+    }
 
 	close(fd);
-	return;
+	return returnedVal;
 }
 
 int main() {
 	int a = -10, b = 20;
-	make_remote_call("ecelinux2.uwaterloo.ca", 
+	return_type ans = make_remote_call("ecelinux2.uwaterloo.ca", 
 							10071,
 							"addtwo",
 							2,
 							sizeof(int), (void *)(&a),
 							sizeof(int), (void *)(&b));
+
+	int i = *(int *)(ans.return_val);
+printf("client, got result: %d\n", i);
+return 0;
 }
