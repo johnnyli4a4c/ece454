@@ -133,8 +133,8 @@ void launch_server()
 
 			// find the function to call in func_db
 			f = 0;
-			for (i = 0; i < DBSIZE; i++) {
-				if (strcmp(func_db[i].procedure_name, procedure_name) == 0) {
+			for (i = 0; i < func_db_count; i++) {
+				if (memcmp(func_db[i].procedure_name, procedure_name, procedure_name_size) == 0) {
 					f = (fp_type)func_db[i].fnpointer;
 					break;
 				}

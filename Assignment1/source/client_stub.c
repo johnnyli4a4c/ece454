@@ -68,7 +68,7 @@ return_type make_remote_call(const char *servernameorip,
 	va_end(list);
 
 	// account for size of sending procedure name and nparams
-	procedure_name_size = sizeof(procedure_name);
+	procedure_name_size = strlen(procedure_name);
 	buffer_size += sizeof(procedure_name_size) + procedure_name_size + sizeof(nparams);
 	/* allocate memory for the list, and let 'buffer' point to it. */
   	buffer = (char *)malloc(buffer_size);
