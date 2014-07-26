@@ -243,6 +243,5 @@ int main(int argc, char *argv[]) {
     register_procedure("srvRemove", 1, srvRemove);
 
     launch_server();
-    fflush(stdout);
     return 0;
 }

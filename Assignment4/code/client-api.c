@@ -217,7 +217,7 @@ struct fsDirent *fsReadDir(FSDIR *folder)
 
     if (ans.return_size > 0) {
         int errNum = *(int *)(ans.return_val);
-        if ((errNum == 0) && (ans.return_size > sizeof(int)) {
+        if ((errNum == 0) && (ans.return_size > sizeof(int))) {
             memcpy(temp, ans.return_val+sizeof(int), sizeof(struct dirent));
             if (temp->d_type == DT_DIR) {
                 dent.entType = 1;
