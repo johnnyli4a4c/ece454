@@ -31,15 +31,13 @@ void printBuf(char *buf, int size) {
 }
 
 int main(int argc, char *argv[]) {
-    char *dirname = NULL;
-
-    if(argc > 1) dirname = argv[1];
-    else {
-	dirname = (char *)calloc(strlen(".")+1, sizeof(char));
-	strcpy(dirname, ".");
+    if(argc < 4) {
+	fprintf(stderr, "usage: %s <srv-ip/name> <srv-port> <local dir name>\n", argv[0]);
+	exit(1);
     }
 
-    printf("fsMount(): %d\n", fsMount(NULL, 0, dirname));
+    char *dirname = argv[3];
+    printf("fsMount(): %d\n", fsMount(argv[1], atoi(argv[2]), dirname));
     FSDIR *fd = fsOpenDir(dirname);
     if(fd == NULL) {
 	perror("fsOpenDir"); exit(1);
@@ -78,7 +76,7 @@ int main(int argc, char *argv[]) {
 
     char buf[256];
     if(read(ff, (void *)buf, 256) < 0) {
-	perror("fsRead(2)"); exit(1);
+	perror("read(2)"); exit(1);
     }
 
     printBuf(buf, 256);
@@ -98,7 +96,33 @@ int main(int argc, char *argv[]) {
 	perror("fsClose"); exit(1);
     }
 
+    char readbuf[256];
+    if((ff = fsOpen(fname, 0)) < 0) {
+	perror("fsOpen(read)"); exit(1);
+    }
+
+    int readcount = -1;
+
+    if((readcount = fsRead(ff, readbuf, 256)) < 256) {
+	fprintf(stderr, "fsRead() read fewer than 256\n");
+    }
+
+    if(memcmp(readbuf, buf, readcount)) {
+	fprintf(stderr, "return buf from fsRead() differs from data written!\n");
+    }
+    else {
+	printf("fsread(): return buf identical to data written upto %d bytes.\n", readcount);
+    }
+
+    if(fsClose(ff) < 0) {
+	perror("fsClose"); exit(1);
+    }
+
     printf("fsRemove(%s): %d\n", fname, fsRemove(fname));
+
+    if(fsUnmount(dirname) < 0) {
+	perror("fsUnmount"); exit(1);
+    }
 
     return 0;
 }
