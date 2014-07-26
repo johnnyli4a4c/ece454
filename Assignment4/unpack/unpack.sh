@@ -11,7 +11,7 @@ make server
 #Note: the following line should create libclient-api.a
 make client-api.a 
 
-./server . >> ./tmp &
+./fsServer . >> ./tmp &
 sleep 1s
 srvout=$(cat ./tmp)
 echo $srvout
