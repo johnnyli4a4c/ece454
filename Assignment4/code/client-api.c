@@ -333,10 +333,11 @@ int fsRead(int fd, void *buf, const unsigned int count)
     if (ans.return_size > 0) {
         int errNum = *(int*)(ans.return_val);
         if (errNum == 0) {
+            memset(buf, 0, count);
             int *numBytes = (int *)malloc(sizeof(int));
             memcpy(numBytes, ans.return_val+sizeof(int), sizeof(int));
-            if (*numBytes >= 0) {
-                memcpy(buf, ans.return_val+sizeof(int)*2, ans.return_size-sizeof(int)*2);
+            if (*numBytes > 0) {
+                memcpy(buf, ans.return_val+sizeof(int)*2, *numBytes);
             }
             return *numBytes;
         } else {
