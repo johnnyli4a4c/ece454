@@ -54,11 +54,11 @@ for (j = 0; j < 2000; j++) {
         if((ff[i] = fsOpen(fname, 1)) < 0) {
     	perror("fsOpen(write)"); exit(1);
         }
-        printf("client 1 opens %d\n", ff[i]);
+        printf("client 2 opens %d\n", ff[i]);
     }
 
     // for (i = 0; i < 2000; i++) {
-    //     sprintf(buf1, "client 1 writes %d\n", i);
+    //     sprintf(buf1, "client 2 writes %d\n", i);
     //     fsWrite(ff[0], buf1, strlen(buf1));
         // if (i == 500) {
             // sprintf(buf2, "client 2 writes %d\n", i);
